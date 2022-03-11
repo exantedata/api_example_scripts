@@ -3,10 +3,13 @@
 #install.packages("httr")
 #install.packages("jsonlite")
 #install.packages("xml2")
+#install.packages("xts")
 #install.packages("data.table")
 library(data.table)
+library(xts)
 require(httr)
 require(jsonlite)
+
 base <- "https://apidata.exantedata.com/"
 TOKEN <- ""
 
@@ -31,7 +34,7 @@ api.get.token <- function() {
   }
 }
 
-api.get.data <- function(tickerQuery, startDate) {
+api.get.data <- function(tickerQuery,startDate) {
   TOKEN <<- api.get.token()
   query <- list(
     "token"=TOKEN,
@@ -49,7 +52,7 @@ api.get.data <- function(tickerQuery, startDate) {
 cleaner <- function(data_to_clean,name) {
   tab <- as.data.table(unlist(data_to_clean),keep.rownames = TRUE)
   tab[, variable := name]
-  tab[, date     := V1]
+  tab[, date     := as.character(V1)]
   tab[, "V1" := NULL]
   names(tab)[names(tab) == "V2"] <- "value"
   setcolorder(tab, c("variable", "date", "value"))
@@ -60,9 +63,9 @@ cleaner <- function(data_to_clean,name) {
 
 ### THIS IS YOUR MAIN FUNCTION, see https://apidocs.exantedata.com for further options.
 
-getdata <- function(ticker, startDate) {
+getdata <- function(ticker,startDate) {
   #call to api
-  apiOutput   <- api.get.data(ticker, startDate)
+  apiOutput   <- api.get.data(ticker,startDate)
   # flatten list
   ticker_data <- lapply(apiOutput, '[')
   #save var names
@@ -73,7 +76,15 @@ getdata <- function(ticker, startDate) {
   dt_ls
 }
 
-#test run
-testrun <- getdata("RU.NSGAS.GER.FLOWS.H","2022-01-01")
-testrun
+startDate <- '2022-01-01'
+gas <- getdata('RU.NSGAS.GER.FLOWS.H',startDate)
+## Downselect
+df <- data.frame(gas[[1]])
 
+## Warning, the dat is in UTC
+df$date <- as.POSIXct(df$date,format="%Y-%m-%d %H:%M:%OS",tz="UTC")
+gas.ts <- xts(df$value,df$date)
+plot(window(gas.ts,start="2022-01-01"))
+
+write.csv(df,"gas_hourly.csv")
+     
