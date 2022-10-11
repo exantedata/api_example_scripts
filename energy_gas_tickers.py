@@ -28,7 +28,7 @@ endDate = None                # FORMAT: YYYY-MM-DD .  SET TO None FOR MOST RECEN
 
 
 TOKEN = None
-API_URL = 'https://exantedata.com:41181/'       # THIS SHOULD NOT BE CHANGED UNLESS ADVISED OTHERWISE
+API_URL = 'https://apidata.exantedata.com/'       # THIS SHOULD NOT BE CHANGED UNLESS ADVISED OTHERWISE
 
 def _errorHandler(r):
     """
@@ -123,11 +123,11 @@ def _getData(tickerQuery, startDate, endDate, end_of_period = True):
         'startDate': startDate,
         'endDate': endDate,
         'period': period,
-        'token': _getToken(),
     }
 
     headers = {
         'Content-type': 'application/json',
+        'Authorization': 'Bearer ' + _getToken(),
     }
 
     url = API_URL + 'Data/Data'
